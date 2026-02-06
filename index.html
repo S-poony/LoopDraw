@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
@@ -16,12 +16,12 @@
         <div class="flex items-center gap-6">
             <div>
                 <h1 class="font-bold text-xl text-white">Drawing Looper</h1>
-                <p class="text-xs text-zinc-500">Cycle : <span id="cycleCount" class="text-blue-400">1</span> | Couleur
-                    : <span id="currentColorBox" class="inline-block w-3 h-3 rounded-full align-middle"></span></p>
+                <p class="text-xs text-zinc-500">Cycle: <span id="cycleCount" class="text-blue-400">1</span> | Color:
+                    <span id="currentColorBox" class="inline-block w-3 h-3 rounded-full align-middle"></span></p>
             </div>
 
             <div class="flex flex-col">
-                <label class="text-[10px] uppercase text-zinc-500 font-bold">Durée du cycle</label>
+                <label class="text-[10px] uppercase text-zinc-500 font-bold">Cycle Duration</label>
                 <div class="flex items-center gap-2">
                     <input type="range" id="durationSlider" min="5" max="60" value="30" class="w-24">
                     <span id="durationVal" class="text-sm font-mono">30s</span>
@@ -65,8 +65,8 @@
             </button>
 
             <button id="clearBtn"
-                class="bg-zinc-800 hover:bg-red-900 text-zinc-300 hover:text-white px-4 py-2 rounded-lg text-sm transition-colors">Tout
-                effacer</button>
+                class="bg-zinc-800 hover:bg-red-900 text-zinc-300 hover:text-white px-4 py-2 rounded-lg text-sm transition-colors">Clear
+                All</button>
             <div class="flex flex-col items-end">
                 <div class="w-48 h-3 bg-zinc-800 rounded-full overflow-hidden border border-zinc-700">
                     <div id="progressBar" class="h-full bg-blue-500 w-0 transition-all duration-100"></div>
@@ -75,14 +75,14 @@
         </div>
     </div>
 
-    <!-- Zone de dessin -->
+    <!-- Drawing Area -->
     <div class="relative flex-grow bg-white overflow-hidden">
         <!-- Onion skin: STATIC snapshot of all previous cycles (fully drawn) -->
         <canvas id="onionCanvas" class="absolute top-0 left-0 w-full h-full pointer-events-none"
             style="opacity: 0; transition: opacity 0.3s;"></canvas>
-        <!-- Replay des cycles précédents (animated based on time) -->
+        <!-- Replay of previous cycles (animated based on time) -->
         <canvas id="replayCanvas" class="absolute top-0 left-0 w-full h-full"></canvas>
-        <!-- Dessin en cours -->
+        <!-- Active drawing -->
         <canvas id="activeCanvas" class="absolute top-0 left-0 w-full h-full"></canvas>
     </div>
 

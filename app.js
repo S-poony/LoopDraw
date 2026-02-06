@@ -16,7 +16,7 @@ const eraserBtn = document.getElementById('eraserBtn');
 const onionBtn = document.getElementById('onionBtn');
 const onionText = document.getElementById('onionText');
 
-// État de l'application
+// Application State
 let allStrokes = []; // [{ color: string, isEraser: boolean, points: [{x, y, t}] }]
 let currentStroke = null;
 let isDrawing = false;
@@ -26,13 +26,13 @@ let startTime = Date.now();
 let currentCycleIndex = 1;
 let currentColor = '#000000';
 
-// Outils
-let currentTool = 'pen'; // 'pen' ou 'eraser'
+// Tools
+let currentTool = 'pen'; // 'pen' or 'eraser'
 let isOnionSkinEnabled = false;
 
-// Couleurs vives pour bien distinguer les cycles
+// Bright colors to clearly distinguish cycles
 const palette = [
-    '#2563eb', '#dc2626', '#16a34a', '#d97706', 
+    '#2563eb', '#dc2626', '#16a34a', '#d97706',
     '#7c3aed', '#db2777', '#0891b2', '#4f46e5'
 ];
 
@@ -115,7 +115,7 @@ function resize() {
 window.addEventListener('resize', resize);
 resize();
 
-// --- Outils ---
+// --- Tools ---
 
 function setTool(tool) {
     currentTool = tool;
@@ -158,7 +158,7 @@ onionBtn.addEventListener('click', () => {
     }
 });
 
-// --- Dessin ---
+// --- Drawing ---
 
 activeCanvas.addEventListener('pointerdown', (e) => {
     isDrawing = true;
@@ -230,24 +230,24 @@ function drawCurrentStroke() {
     activeCtx.stroke();
 }
 
-// --- Boucle de rendu ---
+// --- Render Loop ---
 
 function loop() {
     const now = Date.now();
     let elapsed = now - startTime;
 
-    // Gestion de la fin du cycle
+    // Handle end of cycle
     if (elapsed >= cycleDuration) {
         currentCycleIndex++;
         initCycle();
         elapsed = 0;
     }
 
-    // Mise à jour UI
+    // UI Update
     const progress = (elapsed / cycleDuration) * 100;
     progressBar.style.width = progress + '%';
 
-    // Rendu du Replay (Vidéo des cycles précédents - animated)
+    // Render Replay (Animated video of previous cycles)
     renderReplay(elapsed);
 
     requestAnimationFrame(loop);
@@ -269,7 +269,7 @@ function renderReplay(elapsed) {
         for (let i = 0; i < stroke.points.length; i++) {
             const p = stroke.points[i];
 
-            // On ne dessine le point que si son temps correspond au temps écoulé du cycle
+            // Only draw the point if its time corresponds to the elapsed cycle time
             if (p.t <= elapsed) {
                 if (first) {
                     replayCtx.moveTo(p.x, p.y);
@@ -283,7 +283,7 @@ function renderReplay(elapsed) {
     });
 }
 
-// --- Contrôles ---
+// --- Controls ---
 
 durationSlider.addEventListener('input', (e) => {
     cycleDuration = e.target.value * 1000;
@@ -297,6 +297,6 @@ clearBtn.addEventListener('click', () => {
     initCycle();
 });
 
-// Lancement
+// Start
 initCycle();
 loop();
