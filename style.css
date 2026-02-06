@@ -1,0 +1,25 @@
+body {
+    touch-action: none;
+    background-color: #121212;
+    color: #f0f0f0;
+    margin: 0;
+    overflow: hidden;
+    font-family: sans-serif;
+}
+canvas {
+    cursor: crosshair;
+    touch-action: none;
+}
+.ui-overlay {
+    pointer-events: none;
+}
+.ui-overlay button, .ui-overlay input {
+    pointer-events: auto;
+}
+.tool-btn {
+    transition: all 0.2s;
+}
+.tool-btn.active {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+}
