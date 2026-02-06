@@ -5,6 +5,7 @@ body {
     margin: 0;
     overflow: hidden;
     font-family: sans-serif;
+    overscroll-behavior: none;
 }
 
 canvas {
@@ -43,4 +44,36 @@ canvas {
 #modalContainer.scale-95 {
     transform: scale(0.95);
     opacity: 0;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 640px) {
+    .p-4 {
+        padding: 0.75rem;
+    }
+
+    #exportModal .p-6 {
+        padding: 1.25rem;
+    }
+}
+
+/* Custom breakpoints for Tailwind */
+@media (min-width: 475px) {
+    .xs\:block {
+        display: block !important;
+    }
+
+    .xs\:inline {
+        display: inline !important;
+    }
+}
+
+@media (max-width: 474px) {
+    .xs\:block {
+        display: none !important;
+    }
+
+    .xs\:inline {
+        display: none !important;
+    }
 }
