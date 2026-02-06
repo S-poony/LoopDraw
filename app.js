@@ -16,6 +16,19 @@ const eraserBtn = document.getElementById('eraserBtn');
 const onionBtn = document.getElementById('onionBtn');
 const onionText = document.getElementById('onionText');
 
+const exportBtn = document.getElementById('exportBtn');
+const exportModal = document.getElementById('exportModal');
+const modalContainer = document.getElementById('modalContainer');
+const modalBackdrop = document.getElementById('modalBackdrop');
+const closeModal = document.getElementById('closeModal');
+const exportPng = document.getElementById('exportPng');
+const exportGif = document.getElementById('exportGif');
+const exportVideo = document.getElementById('exportVideo');
+const exportProgress = document.getElementById('exportProgress');
+const exportProgressBar = document.getElementById('exportProgressBar');
+const progressText = document.getElementById('progressText');
+const progressPercent = document.getElementById('progressPercent');
+
 // Application State
 let allStrokes = []; // [{ color: string, isEraser: boolean, points: [{x, y, t}] }]
 let currentStroke = null;
@@ -50,8 +63,10 @@ function initCycle() {
 }
 
 // Render a STATIC image of all strokes fully drawn (no time animation)
-function renderStaticSnapshot(targetCtx) {
-    targetCtx.clearRect(0, 0, targetCtx.canvas.width, targetCtx.canvas.height);
+function renderStaticSnapshot(targetCtx, shouldClear = true) {
+    if (shouldClear) {
+        targetCtx.clearRect(0, 0, targetCtx.canvas.width, targetCtx.canvas.height);
+    }
 
     targetCtx.lineCap = 'round';
     targetCtx.lineJoin = 'round';
@@ -113,7 +128,7 @@ function resize() {
 }
 
 window.addEventListener('resize', resize);
-resize();
+setTimeout(resize, 0); // Ensure size is calculated after DOM layout
 
 // --- Tools ---
 
@@ -230,6 +245,183 @@ function drawCurrentStroke() {
     activeCtx.stroke();
 }
 
+// --- Export Logic ---
+
+function showExportModal() {
+    exportModal.classList.remove('hidden');
+    // Trigger animation
+    setTimeout(() => {
+        modalContainer.classList.remove('scale-95', 'opacity-0');
+        modalContainer.classList.add('scale-100', 'opacity-100');
+    }, 10);
+}
+
+function hideExportModal() {
+    modalContainer.classList.remove('scale-100', 'opacity-100');
+    modalContainer.classList.add('scale-95', 'opacity-0');
+    setTimeout(() => {
+        exportModal.classList.add('hidden');
+        exportProgress.classList.add('hidden');
+    }, 200);
+}
+
+exportBtn.addEventListener('click', showExportModal);
+closeModal.addEventListener('click', hideExportModal);
+modalBackdrop.addEventListener('click', hideExportModal);
+
+function downloadBlob(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+// 1. Static PNG Export
+exportPng.addEventListener('click', () => {
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = activeCanvas.width;
+    tempCanvas.height = activeCanvas.height;
+    const tempCtx = tempCanvas.getContext('2d');
+
+    // White background
+    tempCtx.fillStyle = '#ffffff';
+    tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+
+    // Draw everything fully (all previous strokes + current strokes) - DON'T clear the white fill
+    renderStaticSnapshot(tempCtx, false);
+
+    // Also draw current strokes if they are not yet in allStrokes
+    if (currentStroke && currentStroke.points.length > 0) {
+        tempCtx.beginPath();
+        tempCtx.strokeStyle = currentStroke.color;
+        tempCtx.lineWidth = currentStroke.isEraser ? 20 : 3;
+        tempCtx.lineCap = 'round';
+        tempCtx.lineJoin = 'round';
+        let first = true;
+        currentStroke.points.forEach(p => {
+            if (first) { tempCtx.moveTo(p.x, p.y); first = false; }
+            else { tempCtx.lineTo(p.x, p.y); }
+        });
+        tempCtx.stroke();
+    }
+
+    const dataUrl = tempCanvas.toDataURL('image/png');
+    const a = document.createElement('a');
+    a.href = dataUrl;
+    a.download = `loopdraw-snapshot-${Date.now()}.png`;
+    a.click();
+    hideExportModal();
+});
+
+// 2. GIF/Video Synchronized Capturing
+let isCapturing = false;
+let isWaitingForCycle = false;
+let captureType = null; // 'gif' or 'video'
+let frames = [];
+let mediaRecorder = null;
+let recordedChunks = [];
+let exportProxyCanvas = null;
+let exportProxyCtx = null;
+
+function startCapture(type) {
+    if (isCapturing || isWaitingForCycle) return;
+
+    captureType = type;
+    isWaitingForCycle = true;
+    exportProgress.classList.remove('hidden');
+    progressText.innerText = "Waiting for new cycle...";
+    progressPercent.innerText = "0%";
+    exportProgressBar.style.width = "0%";
+}
+
+function onCycleStart() {
+    if (isWaitingForCycle) {
+        isWaitingForCycle = false;
+        isCapturing = true;
+        if (captureType === 'video') {
+            startVideoRecording();
+        } else if (captureType === 'gif') {
+            startGifCapture();
+        }
+    }
+}
+
+function startVideoRecording() {
+    progressText.innerText = "Recording Video...";
+    recordedChunks = [];
+
+    // Create a proxy canvas to ensure white background
+    exportProxyCanvas = document.createElement('canvas');
+    exportProxyCanvas.width = replayCanvas.width;
+    exportProxyCanvas.height = replayCanvas.height;
+    exportProxyCtx = exportProxyCanvas.getContext('2d');
+
+    const stream = exportProxyCanvas.captureStream(30);
+    mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+
+    mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) recordedChunks.push(e.data);
+    };
+
+    mediaRecorder.onstop = () => {
+        const blob = new Blob(recordedChunks, { type: 'video/webm' });
+        downloadBlob(blob, `loopdraw-${Date.now()}.webm`);
+        isCapturing = false;
+        hideExportModal();
+    };
+
+    mediaRecorder.start();
+}
+
+function startGifCapture() {
+    progressText.innerText = "Capturing Frames...";
+    frames = [];
+}
+
+function handleCaptureProgress(elapsed) {
+    if (!isCapturing) return;
+
+    const progress = Math.min((elapsed / cycleDuration) * 100, 100);
+    exportProgressBar.style.width = progress + "%";
+    progressPercent.innerText = Math.round(progress) + "%";
+
+    // Update Proxy for Video (White BG + Replay)
+    if (captureType === 'video' && exportProxyCtx) {
+        exportProxyCtx.fillStyle = '#ffffff';
+        exportProxyCtx.fillRect(0, 0, exportProxyCanvas.width, exportProxyCanvas.height);
+        exportProxyCtx.drawImage(replayCanvas, 0, 0);
+    }
+
+    if (captureType === 'gif' && progressText.innerText === "Capturing Frames...") {
+        // Capture frame every ~100ms
+        if (frames.length === 0 || Date.now() - frames[frames.length - 1].realT >= 100) {
+            const frameCanvas = document.createElement('canvas');
+            frameCanvas.width = replayCanvas.width / 2;
+            frameCanvas.height = replayCanvas.height / 2;
+            const fCtx = frameCanvas.getContext('2d');
+            fCtx.fillStyle = '#ffffff';
+            fCtx.fillRect(0, 0, frameCanvas.width, frameCanvas.height);
+            fCtx.drawImage(replayCanvas, 0, 0, frameCanvas.width, frameCanvas.height);
+            frames.push({ canvas: frameCanvas, realT: Date.now() });
+        }
+    }
+
+    // End of capture check (slightly before cycle end to avoid reset race)
+    if (elapsed >= cycleDuration - 30) {
+        if (captureType === 'video' && mediaRecorder && mediaRecorder.state === 'recording') {
+            mediaRecorder.stop();
+            isCapturing = false; // Prevents re-firing before browser resets elapsed
+        } else if (captureType === 'gif' && progressText.innerText === "Capturing Frames...") {
+            finalizeGif();
+            isCapturing = false;
+        }
+    }
+}
+
+exportVideo.addEventListener('click', () => startCapture('video'));
+
 // --- Render Loop ---
 
 function loop() {
@@ -241,11 +433,15 @@ function loop() {
         currentCycleIndex++;
         initCycle();
         elapsed = 0;
+        onCycleStart();
     }
 
     // UI Update
     const progress = (elapsed / cycleDuration) * 100;
     progressBar.style.width = progress + '%';
+
+    // Handle Export Progress/Capture
+    handleCaptureProgress(elapsed);
 
     // Render Replay (Animated video of previous cycles)
     renderReplay(elapsed);

@@ -6,20 +6,41 @@ body {
     overflow: hidden;
     font-family: sans-serif;
 }
+
 canvas {
     cursor: crosshair;
     touch-action: none;
 }
+
 .ui-overlay {
     pointer-events: none;
 }
-.ui-overlay button, .ui-overlay input {
+
+.ui-overlay button,
+.ui-overlay input {
     pointer-events: auto;
 }
+
 .tool-btn {
     transition: all 0.2s;
 }
+
 .tool-btn.active {
     outline: 2px solid #3b82f6;
     outline-offset: 2px;
+}
+
+/* Modal Transitions */
+#modalContainer {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#exportModal:not(.hidden) #modalContainer {
+    transform: scale(1);
+    opacity: 1;
+}
+
+#modalContainer.scale-95 {
+    transform: scale(0.95);
+    opacity: 0;
 }
