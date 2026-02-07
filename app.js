@@ -29,12 +29,25 @@ const exportProgressBar = document.getElementById('exportProgressBar');
 const progressText = document.getElementById('progressText');
 const progressPercent = document.getElementById('progressPercent');
 
+// Constants
+const PEN_WIDTH = 3;
+const ERASER_WIDTH = 20;
+const DEFAULT_CYCLE_DURATION = 5000; // 5s
+const VIDEO_FRAME_RATE = 30;
+const GIF_CAPTURE_INTERVAL = 100; // ms
+const GIF_SCALE_FACTOR = 0.5;
+const EXPORT_CAPTURE_END_THRESHOLD = 30; // ms before cycle end
+const MODAL_ANIMATION_DELAY = 10; // ms
+const MODAL_HIDE_DELAY = 200; // ms
+const MS_PER_SEC = 1000;
+const PROGRESS_COMPLETE = 100;
+
 // Application State
 let allStrokes = []; // [{ color: string, isEraser: boolean, points: [{x, y, t}] }]
 let currentStroke = null;
 let isDrawing = false;
 
-let cycleDuration = 30000; // 30s
+let cycleDuration = DEFAULT_CYCLE_DURATION;
 let startTime = Date.now();
 let currentCycleIndex = 1;
 let currentColor = '#000000';
@@ -74,7 +87,7 @@ function renderStaticSnapshot(targetCtx, shouldClear = true) {
     allStrokes.forEach(stroke => {
         targetCtx.beginPath();
         targetCtx.strokeStyle = stroke.color;
-        targetCtx.lineWidth = stroke.isEraser ? 20 : 3;
+        targetCtx.lineWidth = stroke.isEraser ? ERASER_WIDTH : PEN_WIDTH;
 
         let first = true;
         for (let i = 0; i < stroke.points.length; i++) {
@@ -198,7 +211,7 @@ window.addEventListener('pointerup', () => {
             // Add the new stroke to onion canvas
             onionCtx.beginPath();
             onionCtx.strokeStyle = currentStroke.color;
-            onionCtx.lineWidth = currentStroke.isEraser ? 20 : 3;
+            onionCtx.lineWidth = currentStroke.isEraser ? ERASER_WIDTH : PEN_WIDTH;
             onionCtx.lineCap = 'round';
             onionCtx.lineJoin = 'round';
 
@@ -233,7 +246,7 @@ function drawCurrentStroke() {
 
     activeCtx.beginPath();
     activeCtx.strokeStyle = currentStroke.color;
-    activeCtx.lineWidth = currentStroke.isEraser ? 20 : 3;
+    activeCtx.lineWidth = currentStroke.isEraser ? ERASER_WIDTH : PEN_WIDTH;
     activeCtx.lineCap = 'round';
     activeCtx.lineJoin = 'round';
 
@@ -251,7 +264,7 @@ function showExportModal() {
     setTimeout(() => {
         modalContainer.classList.remove('scale-95', 'opacity-0');
         modalContainer.classList.add('scale-100', 'opacity-100');
-    }, 10);
+    }, MODAL_ANIMATION_DELAY);
 }
 
 function hideExportModal() {
@@ -260,7 +273,7 @@ function hideExportModal() {
     setTimeout(() => {
         exportModal.classList.add('hidden');
         exportProgress.classList.add('hidden');
-    }, 200);
+    }, MODAL_HIDE_DELAY);
 }
 
 exportBtn.addEventListener('click', showExportModal);
@@ -294,7 +307,7 @@ exportPng.addEventListener('click', () => {
     if (currentStroke && currentStroke.points.length > 0) {
         tempCtx.beginPath();
         tempCtx.strokeStyle = currentStroke.color;
-        tempCtx.lineWidth = currentStroke.isEraser ? 20 : 3;
+        tempCtx.lineWidth = currentStroke.isEraser ? ERASER_WIDTH : PEN_WIDTH;
         tempCtx.lineCap = 'round';
         tempCtx.lineJoin = 'round';
         let first = true;
@@ -356,7 +369,7 @@ function startVideoRecording() {
     exportProxyCanvas.height = replayCanvas.height;
     exportProxyCtx = exportProxyCanvas.getContext('2d');
 
-    const stream = exportProxyCanvas.captureStream(30);
+    const stream = exportProxyCanvas.captureStream(VIDEO_FRAME_RATE);
     mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
 
     mediaRecorder.ondataavailable = (e) => {
@@ -381,7 +394,7 @@ function startGifCapture() {
 function handleCaptureProgress(elapsed) {
     if (!isCapturing) return;
 
-    const progress = Math.min((elapsed / cycleDuration) * 100, 100);
+    const progress = Math.min((elapsed / cycleDuration) * PROGRESS_COMPLETE, PROGRESS_COMPLETE);
     exportProgressBar.style.width = progress + "%";
     progressPercent.innerText = Math.round(progress) + "%";
 
@@ -394,10 +407,10 @@ function handleCaptureProgress(elapsed) {
 
     if (captureType === 'gif' && progressText.innerText === "Capturing Frames...") {
         // Capture frame every ~100ms
-        if (frames.length === 0 || Date.now() - frames[frames.length - 1].realT >= 100) {
+        if (frames.length === 0 || Date.now() - frames[frames.length - 1].realT >= GIF_CAPTURE_INTERVAL) {
             const frameCanvas = document.createElement('canvas');
-            frameCanvas.width = replayCanvas.width / 2;
-            frameCanvas.height = replayCanvas.height / 2;
+            frameCanvas.width = replayCanvas.width * GIF_SCALE_FACTOR;
+            frameCanvas.height = replayCanvas.height * GIF_SCALE_FACTOR;
             const fCtx = frameCanvas.getContext('2d');
             fCtx.fillStyle = '#ffffff';
             fCtx.fillRect(0, 0, frameCanvas.width, frameCanvas.height);
@@ -407,7 +420,7 @@ function handleCaptureProgress(elapsed) {
     }
 
     // End of capture check (slightly before cycle end to avoid reset race)
-    if (elapsed >= cycleDuration - 30) {
+    if (elapsed >= cycleDuration - EXPORT_CAPTURE_END_THRESHOLD) {
         if (captureType === 'video' && mediaRecorder && mediaRecorder.state === 'recording') {
             mediaRecorder.stop();
             isCapturing = false; // Prevents re-firing before browser resets elapsed
@@ -435,7 +448,7 @@ function loop() {
     }
 
     // UI Update
-    const progress = (elapsed / cycleDuration) * 100;
+    const progress = (elapsed / cycleDuration) * PROGRESS_COMPLETE;
     progressBar.style.width = progress + '%';
 
     // Handle Export Progress/Capture
@@ -457,7 +470,7 @@ function renderReplay(elapsed) {
     allStrokes.forEach(stroke => {
         replayCtx.beginPath();
         replayCtx.strokeStyle = stroke.color;
-        replayCtx.lineWidth = stroke.isEraser ? 20 : 3;
+        replayCtx.lineWidth = stroke.isEraser ? ERASER_WIDTH : PEN_WIDTH;
 
         let first = true;
         for (let i = 0; i < stroke.points.length; i++) {
@@ -480,7 +493,7 @@ function renderReplay(elapsed) {
 // --- Controls ---
 
 durationSlider.addEventListener('input', (e) => {
-    cycleDuration = e.target.value * 1000;
+    cycleDuration = e.target.value * MS_PER_SEC;
     durationVal.innerText = e.target.value + 's';
 });
 
