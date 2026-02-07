@@ -135,6 +135,11 @@ function resize() {
     }
 }
 
+// Prevent context menu (right-click) on canvases
+activeCanvas.addEventListener('contextmenu', (e) => e.preventDefault());
+replayCanvas.addEventListener('contextmenu', (e) => e.preventDefault());
+onionCanvas.addEventListener('contextmenu', (e) => e.preventDefault());
+
 window.addEventListener('resize', resize);
 setTimeout(resize, 0); // Ensure size is calculated after DOM layout
 
