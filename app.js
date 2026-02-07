@@ -22,7 +22,6 @@ const modalContainer = document.getElementById('modalContainer');
 const modalBackdrop = document.getElementById('modalBackdrop');
 const closeModal = document.getElementById('closeModal');
 const exportPng = document.getElementById('exportPng');
-const exportGif = document.getElementById('exportGif');
 const exportVideo = document.getElementById('exportVideo');
 const exportProgress = document.getElementById('exportProgress');
 const exportProgressBar = document.getElementById('exportProgressBar');
@@ -34,8 +33,6 @@ const PEN_WIDTH = 3;
 const ERASER_WIDTH = 20;
 const DEFAULT_CYCLE_DURATION = 5000; // 5s
 const VIDEO_FRAME_RATE = 30;
-const GIF_CAPTURE_INTERVAL = 100; // ms
-const GIF_SCALE_FACTOR = 0.5;
 const EXPORT_CAPTURE_END_THRESHOLD = 30; // ms before cycle end
 const MODAL_ANIMATION_DELAY = 10; // ms
 const MODAL_HIDE_DELAY = 200; // ms
@@ -330,7 +327,6 @@ exportPng.addEventListener('click', () => {
 let isCapturing = false;
 let isWaitingForCycle = false;
 let captureType = null; // 'gif' or 'video'
-let frames = [];
 let mediaRecorder = null;
 let recordedChunks = [];
 let exportProxyCanvas = null;
@@ -353,8 +349,6 @@ function onCycleStart() {
         isCapturing = true;
         if (captureType === 'video') {
             startVideoRecording();
-        } else if (captureType === 'gif') {
-            startGifCapture();
         }
     }
 }
@@ -386,11 +380,6 @@ function startVideoRecording() {
     mediaRecorder.start();
 }
 
-function startGifCapture() {
-    progressText.innerText = "Capturing Frames...";
-    frames = [];
-}
-
 function handleCaptureProgress(elapsed) {
     if (!isCapturing) return;
 
@@ -405,28 +394,10 @@ function handleCaptureProgress(elapsed) {
         exportProxyCtx.drawImage(replayCanvas, 0, 0);
     }
 
-    if (captureType === 'gif' && progressText.innerText === "Capturing Frames...") {
-        // Capture frame every ~100ms
-        if (frames.length === 0 || Date.now() - frames[frames.length - 1].realT >= GIF_CAPTURE_INTERVAL) {
-            const frameCanvas = document.createElement('canvas');
-            frameCanvas.width = replayCanvas.width * GIF_SCALE_FACTOR;
-            frameCanvas.height = replayCanvas.height * GIF_SCALE_FACTOR;
-            const fCtx = frameCanvas.getContext('2d');
-            fCtx.fillStyle = '#ffffff';
-            fCtx.fillRect(0, 0, frameCanvas.width, frameCanvas.height);
-            fCtx.drawImage(replayCanvas, 0, 0, frameCanvas.width, frameCanvas.height);
-            frames.push({ canvas: frameCanvas, realT: Date.now() });
-        }
-    }
-
-    // End of capture check (slightly before cycle end to avoid reset race)
     if (elapsed >= cycleDuration - EXPORT_CAPTURE_END_THRESHOLD) {
         if (captureType === 'video' && mediaRecorder && mediaRecorder.state === 'recording') {
             mediaRecorder.stop();
             isCapturing = false; // Prevents re-firing before browser resets elapsed
-        } else if (captureType === 'gif' && progressText.innerText === "Capturing Frames...") {
-            finalizeGif();
-            isCapturing = false;
         }
     }
 }
