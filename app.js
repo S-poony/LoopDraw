@@ -72,11 +72,9 @@ function renderStaticSnapshot(targetCtx, shouldClear = true) {
     targetCtx.lineJoin = 'round';
 
     allStrokes.forEach(stroke => {
-        if (stroke.isEraser) return; // Skip eraser strokes for onion skin
-
         targetCtx.beginPath();
         targetCtx.strokeStyle = stroke.color;
-        targetCtx.lineWidth = 3;
+        targetCtx.lineWidth = stroke.isEraser ? 20 : 3;
 
         let first = true;
         for (let i = 0; i < stroke.points.length; i++) {
@@ -196,11 +194,11 @@ window.addEventListener('pointerup', () => {
         allStrokes.push(currentStroke);
 
         // If onion skin is enabled, update it to include the new stroke
-        if (isOnionSkinEnabled && !currentStroke.isEraser) {
+        if (isOnionSkinEnabled) {
             // Add the new stroke to onion canvas
             onionCtx.beginPath();
             onionCtx.strokeStyle = currentStroke.color;
-            onionCtx.lineWidth = 3;
+            onionCtx.lineWidth = currentStroke.isEraser ? 20 : 3;
             onionCtx.lineCap = 'round';
             onionCtx.lineJoin = 'round';
 
