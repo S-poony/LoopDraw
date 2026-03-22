@@ -1,0 +1,25 @@
+{
+  "name": "loopdraw",
+  "version": "1.0.0",
+  "description": "There's a 30-second loop that records your strokes.",
+  "main": "app.js",
+  "scripts": {
+    "dev": "vite",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/S-poony/LoopDraw.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/S-poony/LoopDraw/issues"
+  },
+  "homepage": "https://github.com/S-poony/LoopDraw#readme",
+  "devDependencies": {
+    "vite": "^8.0.1"
+  }
+}
