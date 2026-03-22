@@ -10,6 +10,7 @@ const durationVal = document.getElementById('durationVal');
 const progressBar = document.getElementById('progressBar');
 const cycleCountEl = document.getElementById('cycleCount');
 const colorBox = document.getElementById('currentColorBox');
+const collapseBtn = document.getElementById('collapseBtn');
 const clearBtn = document.getElementById('clearBtn');
 const penBtn = document.getElementById('penBtn');
 const eraserBtn = document.getElementById('eraserBtn');
@@ -471,6 +472,16 @@ function renderReplay(elapsed) {
 durationSlider.addEventListener('input', (e) => {
     cycleDuration = e.target.value * MS_PER_SEC;
     durationVal.innerText = e.target.value + 's';
+});
+
+collapseBtn.addEventListener('click', () => {
+    allStrokes.forEach(stroke => {
+        stroke.points.forEach(p => {
+            p.t = 0;
+        });
+    });
+    // Immediately render replay to snap any previously "later" strokes to visible
+    renderReplay(Date.now() - startTime); 
 });
 
 clearBtn.addEventListener('click', () => {
