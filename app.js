@@ -74,7 +74,7 @@ function initCycle() {
 }
 
 // Render a STATIC image of all strokes fully drawn (no time animation)
-function renderStaticSnapshot(targetCtx, shouldClear = true) {
+function renderStaticSnapshot(targetCtx, shouldClear = true, forExport = false) {
     if (shouldClear) {
         targetCtx.clearRect(0, 0, targetCtx.canvas.width, targetCtx.canvas.height);
     }
@@ -84,8 +84,15 @@ function renderStaticSnapshot(targetCtx, shouldClear = true) {
 
     allStrokes.forEach(stroke => {
         targetCtx.beginPath();
-        targetCtx.strokeStyle = stroke.color;
-        targetCtx.lineWidth = stroke.isEraser ? ERASER_WIDTH : PEN_WIDTH;
+        if (stroke.isEraser && !forExport) {
+            targetCtx.globalCompositeOperation = 'destination-out';
+            targetCtx.strokeStyle = 'rgba(0,0,0,1)';
+            targetCtx.lineWidth = ERASER_WIDTH;
+        } else {
+            targetCtx.globalCompositeOperation = 'source-over';
+            targetCtx.strokeStyle = stroke.color;
+            targetCtx.lineWidth = stroke.isEraser ? ERASER_WIDTH : PEN_WIDTH;
+        }
 
         let first = true;
         for (let i = 0; i < stroke.points.length; i++) {
@@ -213,8 +220,15 @@ window.addEventListener('pointerup', () => {
         if (isOnionSkinEnabled) {
             // Add the new stroke to onion canvas
             onionCtx.beginPath();
-            onionCtx.strokeStyle = currentStroke.color;
-            onionCtx.lineWidth = currentStroke.isEraser ? ERASER_WIDTH : PEN_WIDTH;
+            if (currentStroke.isEraser) {
+                onionCtx.globalCompositeOperation = 'destination-out';
+                onionCtx.strokeStyle = 'rgba(0,0,0,1)';
+                onionCtx.lineWidth = ERASER_WIDTH;
+            } else {
+                onionCtx.globalCompositeOperation = 'source-over';
+                onionCtx.strokeStyle = currentStroke.color;
+                onionCtx.lineWidth = PEN_WIDTH;
+            }
             onionCtx.lineCap = 'round';
             onionCtx.lineJoin = 'round';
 
@@ -304,11 +318,12 @@ exportPng.addEventListener('click', () => {
     tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
 
     // Draw everything fully (all previous strokes + current strokes) - DON'T clear the white fill
-    renderStaticSnapshot(tempCtx, false);
+    renderStaticSnapshot(tempCtx, false, true);
 
     // Also draw current strokes if they are not yet in allStrokes
     if (currentStroke && currentStroke.points.length > 0) {
         tempCtx.beginPath();
+        tempCtx.globalCompositeOperation = 'source-over';
         tempCtx.strokeStyle = currentStroke.color;
         tempCtx.lineWidth = currentStroke.isEraser ? ERASER_WIDTH : PEN_WIDTH;
         tempCtx.lineCap = 'round';
@@ -446,8 +461,15 @@ function renderReplay(elapsed) {
 
     allStrokes.forEach(stroke => {
         replayCtx.beginPath();
-        replayCtx.strokeStyle = stroke.color;
-        replayCtx.lineWidth = stroke.isEraser ? ERASER_WIDTH : PEN_WIDTH;
+        if (stroke.isEraser) {
+            replayCtx.globalCompositeOperation = 'destination-out';
+            replayCtx.strokeStyle = 'rgba(0,0,0,1)';
+            replayCtx.lineWidth = ERASER_WIDTH;
+        } else {
+            replayCtx.globalCompositeOperation = 'source-over';
+            replayCtx.strokeStyle = stroke.color;
+            replayCtx.lineWidth = PEN_WIDTH;
+        }
 
         let first = true;
         for (let i = 0; i < stroke.points.length; i++) {
