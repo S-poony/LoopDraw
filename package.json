@@ -14,12 +14,14 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
   "bugs": {
     "url": "https://github.com/S-poony/LoopDraw/issues"
   },
   "homepage": "https://github.com/S-poony/LoopDraw#readme",
   "devDependencies": {
+    "@tailwindcss/vite": "^4.2.2",
+    "tailwindcss": "^4.2.2",
     "vite": "^8.0.1"
   }
 }

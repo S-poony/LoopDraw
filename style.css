@@ -1,3 +1,5 @@
+@import "tailwindcss";
+
 body {
     touch-action: none;
     background-color: #121212;
