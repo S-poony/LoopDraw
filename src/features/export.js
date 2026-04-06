@@ -2,6 +2,7 @@ import { activeCanvas, replayCanvas, activeCtx, replayCtx, renderStaticSnapshot 
 import { allStrokes, currentStroke } from '../state.js';
 import { PEN_WIDTH, ERASER_WIDTH, VIDEO_FRAME_RATE, EXPORT_CAPTURE_END_THRESHOLD, PROGRESS_COMPLETE } from '../state.js';
 import { renderStrokes } from '../rendering/strokeRenderer.js';
+import { zoom, panX, panY } from '../viewport.js';
 
 const exportBtn = document.getElementById('exportBtn');
 const exportModal = document.getElementById('exportModal');
@@ -17,6 +18,8 @@ const progressPercent = document.getElementById('progressPercent');
 
 const MODAL_ANIMATION_DELAY = 10;
 const MODAL_HIDE_DELAY = 200;
+const EXPORT_WIDTH = 1920;
+const EXPORT_HEIGHT = 1080;
 
 export let isCapturing = false;
 export let isWaitingForCycle = false;
@@ -26,6 +29,20 @@ let mediaRecorder = null;
 let recordedChunks = [];
 let exportProxyCanvas = null;
 let exportProxyCtx = null;
+// Snapshot scale factors at capture start so they stay consistent across frames
+let exportScaleX = 1;
+let exportScaleY = 1;
+let exportZoom = 1;
+let exportPanX = 0;
+let exportPanY = 0;
+
+/**
+ * Apply the viewport transform scaled to the export resolution.
+ * Maps the current canvas view → EXPORT_WIDTH × EXPORT_HEIGHT.
+ */
+function applyExportTransform(ctx, sx, sy, z, px, py) {
+    ctx.setTransform(z * sx, 0, 0, z * sy, px * sx, py * sy);
+}
 
 function showExportModal() {
     exportModal.classList.remove('hidden');
@@ -74,9 +91,16 @@ function startVideoRecording() {
     progressText.innerText = 'Recording Video...';
     recordedChunks = [];
 
+    // Snapshot current viewport so it stays fixed across all frames
+    exportScaleX = EXPORT_WIDTH / replayCanvas.width;
+    exportScaleY = EXPORT_HEIGHT / replayCanvas.height;
+    exportZoom = zoom;
+    exportPanX = panX;
+    exportPanY = panY;
+
     exportProxyCanvas = document.createElement('canvas');
-    exportProxyCanvas.width = replayCanvas.width;
-    exportProxyCanvas.height = replayCanvas.height;
+    exportProxyCanvas.width = EXPORT_WIDTH;
+    exportProxyCanvas.height = EXPORT_HEIGHT;
     exportProxyCtx = exportProxyCanvas.getContext('2d');
 
     const stream = exportProxyCanvas.captureStream(VIDEO_FRAME_RATE);
@@ -103,9 +127,12 @@ export function handleCaptureProgress(elapsed, cycleDuration) {
     progressPercent.innerText = Math.round(progress) + '%';
 
     if (captureType === 'video' && exportProxyCtx) {
+        exportProxyCtx.resetTransform();
         exportProxyCtx.fillStyle = '#ffffff';
-        exportProxyCtx.fillRect(0, 0, exportProxyCanvas.width, exportProxyCanvas.height);
+        exportProxyCtx.fillRect(0, 0, EXPORT_WIDTH, EXPORT_HEIGHT);
+        applyExportTransform(exportProxyCtx, exportScaleX, exportScaleY, exportZoom, exportPanX, exportPanY);
         renderStrokes(exportProxyCtx, allStrokes, { upToTime: elapsed, forExport: true });
+        exportProxyCtx.resetTransform();
     }
 
     if (elapsed >= cycleDuration - EXPORT_CAPTURE_END_THRESHOLD) {
@@ -124,16 +151,22 @@ export function initExport() {
 
     exportPng.addEventListener('click', () => {
         const tempCanvas = document.createElement('canvas');
-        tempCanvas.width = activeCanvas.width;
-        tempCanvas.height = activeCanvas.height;
+        tempCanvas.width = EXPORT_WIDTH;
+        tempCanvas.height = EXPORT_HEIGHT;
         const tempCtx = tempCanvas.getContext('2d');
 
         // White background
         tempCtx.fillStyle = '#ffffff';
-        tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+        tempCtx.fillRect(0, 0, EXPORT_WIDTH, EXPORT_HEIGHT);
+
+        // Apply viewport transform scaled to export resolution
+        const sx = EXPORT_WIDTH / activeCanvas.width;
+        const sy = EXPORT_HEIGHT / activeCanvas.height;
+        applyExportTransform(tempCtx, sx, sy, zoom, panX, panY);
 
         // forExport=true: erasers render as white paint on white BG
-        renderStaticSnapshot(tempCtx, { shouldClear: false, forExport: true });
+        renderStrokes(tempCtx, allStrokes, { forExport: true });
+        tempCtx.resetTransform();
 
         const dataUrl = tempCanvas.toDataURL('image/png');
         const a = document.createElement('a');
@@ -143,3 +176,4 @@ export function initExport() {
         hideExportModal();
     });
 }
+
