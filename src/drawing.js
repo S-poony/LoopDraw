@@ -1,7 +1,7 @@
 import { activeCanvas } from './rendering/canvasRenderer.js';
 import {
     currentStroke, setCurrentStroke, isDrawing, setIsDrawing,
-    pushStroke, startTime, currentColor
+    pushStroke, startTime, currentColor, cycleStart, MS_PER_SEC
 } from './state.js';
 import { getCurrentTool } from './tools/toolManager.js';
 import { updateOnionWithStroke } from './features/onionSkin.js';
@@ -19,7 +19,7 @@ function addPoint(e) {
     currentStroke.points.push({
         x: world.x,
         y: world.y,
-        t: Date.now() - startTime
+        t: cycleStart * MS_PER_SEC + (Date.now() - startTime)
     });
 }
 

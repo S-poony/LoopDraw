@@ -29,12 +29,15 @@ export function setIsDrawing(val) { isDrawing = val; }
 export function pushStroke(stroke) { allStrokes.push(stroke); }
 
 // Cycle state
-export let cycleDuration = DEFAULT_CYCLE_DURATION;
+export let cycleStart = 0;  // seconds (left thumb)
+export let cycleEnd = 5;    // seconds (right thumb)
+export let cycleDuration = DEFAULT_CYCLE_DURATION; // ms, derived
 export let startTime = Date.now();
 export let currentCycleIndex = 1;
 export let currentColor = '#000000';
 
-export function setCycleDuration(val) { cycleDuration = val; }
+export function setCycleStart(val) { cycleStart = val; cycleDuration = (cycleEnd - cycleStart) * MS_PER_SEC; }
+export function setCycleEnd(val)   { cycleEnd = val;   cycleDuration = (cycleEnd - cycleStart) * MS_PER_SEC; }
 export function setStartTime(val) { startTime = val; }
 export function setCurrentCycleIndex(val) { currentCycleIndex = val; }
 export function setCurrentColor(val) { currentColor = val; }

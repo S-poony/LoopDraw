@@ -1,5 +1,5 @@
 import { activeCanvas, replayCanvas, activeCtx, replayCtx, renderStaticSnapshot } from '../rendering/canvasRenderer.js';
-import { allStrokes, currentStroke } from '../state.js';
+import { allStrokes, currentStroke, cycleStart, MS_PER_SEC } from '../state.js';
 import { PEN_WIDTH, ERASER_WIDTH, VIDEO_FRAME_RATE, EXPORT_CAPTURE_END_THRESHOLD, PROGRESS_COMPLETE } from '../state.js';
 import { renderStrokes } from '../rendering/strokeRenderer.js';
 import { zoom, panX, panY } from '../viewport.js';
@@ -35,6 +35,7 @@ let exportScaleY = 1;
 let exportZoom = 1;
 let exportPanX = 0;
 let exportPanY = 0;
+let exportCycleStartMs = 0;
 
 /**
  * Apply the viewport transform scaled to the export resolution.
@@ -97,6 +98,7 @@ function startVideoRecording() {
     exportZoom = zoom;
     exportPanX = panX;
     exportPanY = panY;
+    exportCycleStartMs = cycleStart * MS_PER_SEC;
 
     exportProxyCanvas = document.createElement('canvas');
     exportProxyCanvas.width = EXPORT_WIDTH;
@@ -131,7 +133,7 @@ export function handleCaptureProgress(elapsed, cycleDuration) {
         exportProxyCtx.fillStyle = '#ffffff';
         exportProxyCtx.fillRect(0, 0, EXPORT_WIDTH, EXPORT_HEIGHT);
         applyExportTransform(exportProxyCtx, exportScaleX, exportScaleY, exportZoom, exportPanX, exportPanY);
-        renderStrokes(exportProxyCtx, allStrokes, { upToTime: elapsed, forExport: true });
+        renderStrokes(exportProxyCtx, allStrokes, { upToTime: exportCycleStartMs + elapsed, forExport: true });
         exportProxyCtx.resetTransform();
     }
 

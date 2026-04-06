@@ -1,6 +1,6 @@
 import {
     cycleDuration, startTime, setStartTime, currentCycleIndex, incrementCycleIndex, setCurrentCycleIndex,
-    currentColor, setCurrentColor, getRandomColor, PROGRESS_COMPLETE
+    currentColor, setCurrentColor, getRandomColor, PROGRESS_COMPLETE, cycleStart, MS_PER_SEC
 } from './state.js';
 import { activeCtx, activeCanvas, renderReplay } from './rendering/canvasRenderer.js';
 import { onCaptureStart, handleCaptureProgress } from './features/export.js';
@@ -40,7 +40,8 @@ export function loop() {
     progressBar.style.width = progress + '%';
 
     handleCaptureProgress(elapsed, cycleDuration);
-    renderReplay(elapsed);
+    renderReplay(cycleStart * MS_PER_SEC + elapsed);
 
     requestAnimationFrame(loop);
 }
+
