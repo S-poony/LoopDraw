@@ -16,6 +16,17 @@ export function updateOnionWithStroke(stroke) {
     onionCtx.resetTransform();
 }
 
+/**
+ * Re-render the entire onion canvas with the current viewport transform.
+ * Called when zoom/pan changes.
+ */
+export function refreshOnion() {
+    if (!isOnionSkinEnabled) return;
+    onionCtx.resetTransform();
+    onionCtx.clearRect(0, 0, onionCanvas.width, onionCanvas.height);
+    renderStaticSnapshot(onionCtx);
+}
+
 export function initOnionSkin() {
     onionBtn.addEventListener('click', () => {
         isOnionSkinEnabled = !isOnionSkinEnabled;

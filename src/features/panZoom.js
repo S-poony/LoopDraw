@@ -1,6 +1,8 @@
 import { activeCanvas } from '../rendering/canvasRenderer.js';
 import { zoom, panX, panY, setZoom, setPan, resetViewport, MIN_ZOOM, MAX_ZOOM } from '../viewport.js';
 import { getCurrentTool, setTool } from '../tools/toolManager.js';
+import { refreshActiveCanvas } from '../drawing.js';
+import { refreshOnion } from './onionSkin.js';
 
 // ── Constants ──────────────────────────────────────────────
 const WHEEL_ZOOM_FACTOR = 0.001;   // multiplier per wheel deltaY pixel
@@ -36,6 +38,13 @@ function zoomAtPoint(screenX, screenY, newZoom) {
     setZoom(clampedZoom);
     // Adjust pan so the same world point stays under the cursor
     setPan(screenX - wx * zoom, screenY - wy * zoom);
+    onViewportChange();
+}
+
+// ── Viewport change notification ───────────────────────────
+function onViewportChange() {
+    refreshActiveCanvas();
+    refreshOnion();
     showZoomBadge();
 }
 
@@ -63,6 +72,7 @@ function movePan(e) {
     const dx = e.clientX - panStartX;
     const dy = e.clientY - panStartY;
     setPan(panStartPanX + dx, panStartPanY + dy);
+    onViewportChange();
 }
 
 function endPan() {
@@ -121,7 +131,7 @@ export function initPanZoom() {
         if (e.code === 'Digit0' && (e.ctrlKey || e.metaKey)) {
             e.preventDefault();
             resetViewport();
-            showZoomBadge();
+            onViewportChange();
         }
     });
 

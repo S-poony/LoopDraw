@@ -9,6 +9,8 @@ import { PEN_WIDTH, ERASER_WIDTH } from './state.js';
 import { screenToWorld, applyTransform } from './viewport.js';
 import { isPanning, isZoomDragging } from './features/panZoom.js';
 
+let _activeCtx = null;
+
 function addPoint(e) {
     const rect = activeCanvas.getBoundingClientRect();
     const screenX = e.clientX - rect.left;
@@ -37,7 +39,34 @@ function drawCurrentStroke(ctx) {
     ctx.resetTransform();
 }
 
+/**
+ * Clear the active canvas and redraw the in-progress stroke (if any)
+ * with the current viewport transform. Called when viewport changes.
+ */
+export function refreshActiveCanvas() {
+    if (!_activeCtx) return;
+    _activeCtx.resetTransform();
+    _activeCtx.clearRect(0, 0, activeCanvas.width, activeCanvas.height);
+    if (!currentStroke || currentStroke.points.length < 2) return;
+
+    applyTransform(_activeCtx);
+    _activeCtx.beginPath();
+    _activeCtx.strokeStyle = currentStroke.color;
+    _activeCtx.lineWidth = currentStroke.isEraser ? ERASER_WIDTH : PEN_WIDTH;
+    _activeCtx.lineCap = 'round';
+    _activeCtx.lineJoin = 'round';
+    const pts = currentStroke.points;
+    _activeCtx.moveTo(pts[0].x, pts[0].y);
+    for (let i = 1; i < pts.length; i++) {
+        _activeCtx.lineTo(pts[i].x, pts[i].y);
+    }
+    _activeCtx.stroke();
+    _activeCtx.resetTransform();
+}
+
 export function initDrawing(activeCtx) {
+    _activeCtx = activeCtx;
+
     activeCanvas.addEventListener('contextmenu', (e) => e.preventDefault());
 
     activeCanvas.addEventListener('pointerdown', (e) => {
@@ -68,6 +97,9 @@ export function initDrawing(activeCtx) {
         }
         setIsDrawing(false);
         setCurrentStroke(null);
+        // Clear — completed strokes are now in allStrokes and rendered by the replay canvas
+        _activeCtx.resetTransform();
+        _activeCtx.clearRect(0, 0, activeCanvas.width, activeCanvas.height);
     });
 }
 
