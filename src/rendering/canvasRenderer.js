@@ -1,5 +1,6 @@
 import { renderStrokes } from './strokeRenderer.js';
 import { allStrokes } from '../state.js';
+import { applyTransform } from '../viewport.js';
 
 const activeCanvas = document.getElementById('activeCanvas');
 const replayCanvas = document.getElementById('replayCanvas');
@@ -13,16 +14,22 @@ export { activeCanvas, replayCanvas, onionCanvas };
 
 // Render a STATIC image of all strokes fully drawn
 export function renderStaticSnapshot(targetCtx, { shouldClear = true, forExport = false } = {}) {
+    targetCtx.resetTransform();
     if (shouldClear) {
         targetCtx.clearRect(0, 0, targetCtx.canvas.width, targetCtx.canvas.height);
     }
+    if (!forExport) applyTransform(targetCtx);
     renderStrokes(targetCtx, allStrokes, { forExport });
+    targetCtx.resetTransform();
 }
 
 // Render time-based animation (strokes up to elapsed ms within cycle)
 export function renderReplay(elapsed) {
+    replayCtx.resetTransform();
     replayCtx.clearRect(0, 0, replayCanvas.width, replayCanvas.height);
+    applyTransform(replayCtx);
     renderStrokes(replayCtx, allStrokes, { upToTime: elapsed });
+    replayCtx.resetTransform();
 }
 
 export function resize() {

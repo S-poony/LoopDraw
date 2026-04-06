@@ -1,6 +1,7 @@
 import { onionCtx, onionCanvas, renderStaticSnapshot } from '../rendering/canvasRenderer.js';
 import { allStrokes } from '../state.js';
 import { applyStrokeStyle, drawStrokePath } from '../rendering/strokeRenderer.js';
+import { applyTransform } from '../viewport.js';
 
 const onionBtn = document.getElementById('onionBtn');
 const onionText = document.getElementById('onionText');
@@ -9,8 +10,10 @@ export let isOnionSkinEnabled = false;
 
 export function updateOnionWithStroke(stroke) {
     if (!isOnionSkinEnabled) return;
+    applyTransform(onionCtx);
     applyStrokeStyle(onionCtx, stroke);
     drawStrokePath(onionCtx, stroke.points);
+    onionCtx.resetTransform();
 }
 
 export function initOnionSkin() {

@@ -1,8 +1,5 @@
 import { activeCanvas } from '../rendering/canvasRenderer.js';
 
-const penBtn = document.getElementById('penBtn');
-const eraserBtn = document.getElementById('eraserBtn');
-
 let currentTool = 'pen';
 
 const tools = {};
@@ -36,6 +33,10 @@ export function setTool(name) {
 }
 
 export function initToolManager() {
-    penBtn.addEventListener('click', () => setTool('pen'));
-    eraserBtn.addEventListener('click', () => setTool('eraser'));
+    // Bind click handlers for all registered tools that have buttons
+    Object.entries(tools).forEach(([name, config]) => {
+        if (config.button) {
+            config.button.addEventListener('click', () => setTool(name));
+        }
+    });
 }

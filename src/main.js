@@ -2,9 +2,11 @@ import { resize, activeCtx, activeCanvas, replayCanvas, onionCanvas } from './re
 import { initToolManager, setTool } from './tools/toolManager.js';
 import { initPen } from './tools/pen.js';
 import { initEraser } from './tools/eraser.js';
+import { initZoom } from './tools/zoom.js';
 import { initOnionSkin } from './features/onionSkin.js';
 import { initExport } from './features/export.js';
 import { initControls } from './features/controls.js';
+import { initPanZoom } from './features/panZoom.js';
 import { initDrawing } from './drawing.js';
 import { initCycle, loop } from './loop.js';
 
@@ -20,6 +22,7 @@ setTimeout(resize, 0);
 // Tools (register before setTool)
 initPen();
 initEraser();
+initZoom();
 initToolManager();
 setTool('pen');
 
@@ -27,6 +30,7 @@ setTool('pen');
 initOnionSkin();
 initExport();
 initControls();
+initPanZoom();
 
 // Drawing
 initDrawing(activeCtx);
@@ -34,3 +38,4 @@ initDrawing(activeCtx);
 // Start
 initCycle(1);
 loop();
+

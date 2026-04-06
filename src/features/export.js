@@ -1,6 +1,7 @@
 import { activeCanvas, replayCanvas, activeCtx, replayCtx, renderStaticSnapshot } from '../rendering/canvasRenderer.js';
 import { allStrokes, currentStroke } from '../state.js';
 import { PEN_WIDTH, ERASER_WIDTH, VIDEO_FRAME_RATE, EXPORT_CAPTURE_END_THRESHOLD, PROGRESS_COMPLETE } from '../state.js';
+import { renderStrokes } from '../rendering/strokeRenderer.js';
 
 const exportBtn = document.getElementById('exportBtn');
 const exportModal = document.getElementById('exportModal');
@@ -104,7 +105,7 @@ export function handleCaptureProgress(elapsed, cycleDuration) {
     if (captureType === 'video' && exportProxyCtx) {
         exportProxyCtx.fillStyle = '#ffffff';
         exportProxyCtx.fillRect(0, 0, exportProxyCanvas.width, exportProxyCanvas.height);
-        exportProxyCtx.drawImage(replayCanvas, 0, 0);
+        renderStrokes(exportProxyCtx, allStrokes, { upToTime: elapsed, forExport: true });
     }
 
     if (elapsed >= cycleDuration - EXPORT_CAPTURE_END_THRESHOLD) {
